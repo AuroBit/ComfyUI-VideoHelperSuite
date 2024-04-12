@@ -178,7 +178,7 @@ class VideoCombine:
             "optional": {
                 "pix_fmt": (video_pixel_format, {"default": video_pixel_format[1]}),
                 "crf": ("INT", {"default": 23, "min": 0, "max": 100, "step": 1}),
-                "input_color_depth": (["8bit", "16bit"]),
+                "input_color_depth": (["8bit", "16bit"],),
                 "save_metadata": ("BOOLEAN", {"default": True}),
                 "audio": ("VHS_AUDIO",),
                 "meta_batch": ("VHS_BatchManager",)
