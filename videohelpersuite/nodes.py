@@ -44,6 +44,7 @@ def get_video_formats():
     for format_name in folder_paths.get_filename_list("VHS_video_formats"):
         format_name = format_name[:-5]
         video_format_path = folder_paths.get_full_path("VHS_video_formats", format_name + ".json")
+        print(f"[video format path]: {video_format_path}")
         with open(video_format_path, 'r') as stream:
             video_format = json.load(stream)
         if "gifski_pass" in video_format and gifski_path is None:
@@ -79,6 +80,7 @@ def apply_format_widgets(format_name, kwargs):
     with open(video_format_path, 'r') as stream:
         video_format = json.load(stream)
     for w in gen_format_widgets(video_format):
+        print(w)
         assert(w[0][0] in kwargs)
         w[0] = str(kwargs[w[0][0]])
     return video_format
@@ -160,6 +162,9 @@ class VideoCombine:
     @classmethod
     def INPUT_TYPES(s):
         ffmpeg_formats = get_video_formats()
+        print(ffmpeg_formats)
+        ffmpeg_formats = [ val[0] if isinstance(val, list) else val for val in ffmpeg_formats]
+        video_pixel_format = ["yuv420p10le", "yuv420p"]
         return {
             "required": {
                 "images": ("IMAGE",),
@@ -174,6 +179,10 @@ class VideoCombine:
                 "save_output": ("BOOLEAN", {"default": True}),
             },
             "optional": {
+                "pix_fmt": (video_pixel_format, {"default": video_pixel_format[1]}),
+                "crf": ("INT", {"default": 23, "min": 0, "max": 100, "step": 1}),
+                "input_color_depth": (["8bit", "16bit"]),
+                "save_metadata": ("BOOLEAN", {"default": True}),
                 "audio": ("VHS_AUDIO",),
                 "meta_batch": ("VHS_BatchManager",)
             },
@@ -204,7 +213,11 @@ class VideoCombine:
         audio=None,
         unique_id=None,
         manual_format_widgets=None,
-        meta_batch=None
+        meta_batch=None,
+        pix_fmt = None,
+        crf = None,
+        save_metadata = False,
+        input_color_depth = "8bit",
     ):
         # get output information
         output_dir = (
@@ -305,8 +318,11 @@ class VideoCombine:
                     kwargs = prompt[unique_id]['inputs']
                 else:
                     manual_format_widgets = {}
+                print(f"[combine video] format kwargs 0 : {kwargs}")
             if kwargs is None:
+                print(f"[combine video] format ext: {format_ext}")
                 kwargs = get_format_widget_defaults(format_ext)
+                print(f"[combine video] format kwargs: {kwargs}")
                 missing = {}
                 for k in kwargs.keys():
                     if k in manual_format_widgets:
@@ -437,6 +453,7 @@ class VideoCombine:
                 "format": format,
             }
         ]
+        print(f"[combine video] output_file: {output_files}")
         return {"ui": {"gifs": previews}, "result": ((save_output, output_files),)}
     @classmethod
     def VALIDATE_INPUTS(self, format, **kwargs):
